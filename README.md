@@ -7,7 +7,7 @@ A 720x1280 Unity mini-game: a ring of 18 monster slots lights up clockwise aroun
 | Press Space | What happens |
 |---|---|
 | 1st | Reel spins, ring light chases clockwise |
-| 2nd | Reel decelerates onto a random monster, then the ring light decelerates onto a slot with the **same** monster (next match clockwise, after at least one more lap) |
+| 2nd | Reel and ring light decelerate together: the reel lands on a random monster, and the ring comes to rest on a slot with the **same** monster about 0.3–1.3 s later |
 | 3rd | New round |
 
 Space is ignored while the wheel is stopping.
@@ -27,7 +27,7 @@ Assets/MonsterWheel/
     WheelStateMachine   Idle → Spinning → StoppingReel → StoppingRing → Idle
     StopPlanner         which ring slot to stop on
     DecelerationMotion  frame-rate independent ease-out that lands exactly on target
-    RingLayout          slot i shows icon i mod 9 (each icon twice, point-symmetric)
+    RingLayout          slot i shows icon (i - 2) mod 9 (each icon twice, point-symmetric)
   Scripts/View/     uGUI rendering + input (MonsterWheelController, RingView, ReelView, SlotView, WheelConfig)
   Scripts/Editor/   MonsterWheelSceneBuilder (menu: Tools > Monster Wheel > Build Scene)
   Tests/EditMode/   NUnit tests for Core
@@ -38,7 +38,7 @@ Stops start from the current spin speed (duration = curve slope × distance / sp
 
 ## Tests
 
-*Window > General > Test Runner > EditMode > Run All* (30 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
+*Window > General > Test Runner > EditMode > Run All* (33 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
 
 ## Rebuild the scene
 

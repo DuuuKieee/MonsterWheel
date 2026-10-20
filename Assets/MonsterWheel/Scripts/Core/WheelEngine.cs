@@ -17,7 +17,6 @@ namespace MonsterWheel.Core
         private DecelerationMotion _reelStop;
         private DecelerationMotion _reelSettle;
         private DecelerationMotion _ringStop;
-        private float _handoffTimer;
         private int _reelTarget;
 
         public WheelEngine(WheelSettings settings, IRandom random)
@@ -63,7 +62,7 @@ namespace MonsterWheel.Core
             }
             else
             {
-                BeginReelStop();
+                BeginStop();
             }
         }
 
@@ -79,11 +78,12 @@ namespace MonsterWheel.Core
                     SpinReel(dt);
                     break;
                 case WheelState.StoppingReel:
-                    SpinRing(dt);
-                    TickReelStop(dt);
+                    AdvanceRingStop(dt);
+                    if (AdvanceReelStop(dt)) _machine.NotifyReelStopped();
                     break;
                 case WheelState.StoppingRing:
-                    TickRingStop(dt);
+                    AdvanceRingStop(dt);
+                    if (_ringStop.IsDone) FinishRound();
                     break;
             }
         }
@@ -100,10 +100,17 @@ namespace MonsterWheel.Core
             ReelPosition = Wrap(ReelPosition + _reelSpeed * dt, RingLayout.IconCount);
         }
 
-        private void BeginReelStop()
+        /// <summary>Picks the result and starts reel and ring decelerating together.</summary>
+        private void BeginStop()
         {
             TargetIcon = _random.Next(RingLayout.IconCount);
+            var reelDuration = BeginReelStop();
+            BeginRingStop(reelDuration + _settings.RingStopLag);
+        }
 
+        /// <returns>Total time until the reel rests on the target.</returns>
+        private float BeginReelStop()
+        {
             // Smallest integer end >= position + one round that centers the target icon.
             var end = (int)Math.Ceiling(ReelPosition) + RingLayout.IconCount;
             end += Mod(TargetIcon - end, RingLayout.IconCount);
@@ -114,10 +121,27 @@ namespace MonsterWheel.Core
             var speed = Math.Max(_reelSpeed, _settings.ReelSpinSpeed * _settings.MinStopSpeedRatio);
             _reelStop = DecelerationMotion.FromSpeed(ReelPosition, end + _settings.ReelOvershoot, speed, EaseKind.OutCubic);
             _reelSettle = null;
-            _handoffTimer = 0f;
+            return _reelStop.Duration + _settings.ReelSettleTime;
         }
 
-        private void TickReelStop(float dt)
+        /// <summary>
+        /// Starts the ring's constant deceleration toward the first slot showing the target icon that is
+        /// far enough away for the stop to last at least <paramref name="minDuration"/>, so the ring
+        /// always comes to rest shortly after the reel.
+        /// </summary>
+        private void BeginRingStop(float minDuration)
+        {
+            var speed = Math.Max(_ringSpeed, _settings.RingSpinSpeed * _settings.MinStopSpeedRatio);
+            var minDistance = speed * minDuration / Easing.Slope(EaseKind.OutQuad, 0f, 0f);
+            var baseSlot = (int)Math.Floor(RingPosition);
+            var frac = RingPosition - baseSlot;
+            var steps = StopPlanner.FirstMatchAtOrAfter(
+                Mod(baseSlot, RingLayout.SlotCount), TargetIcon, Layout, (int)Math.Ceiling(minDistance + frac));
+            _ringStop = DecelerationMotion.FromSpeed(RingPosition, baseSlot + steps, speed, EaseKind.OutQuad);
+        }
+
+        /// <returns>True on the tick the reel comes to rest.</returns>
+        private bool AdvanceReelStop(float dt)
         {
             if (!_reelStop.IsDone)
             {
@@ -125,40 +149,26 @@ namespace MonsterWheel.Core
                 ReelPosition = _reelStop.Position;
                 if (_reelStop.IsDone)
                     _reelSettle = new DecelerationMotion(ReelPosition, _reelTarget, _settings.ReelSettleTime, EaseKind.OutQuad);
-                return;
+                return false;
             }
 
-            if (!_reelSettle.IsDone)
-            {
-                _reelSettle.Advance(dt);
-                ReelPosition = _reelSettle.Position;
-                if (!_reelSettle.IsDone) return;
-                ReelPosition = Mod(_reelTarget, RingLayout.IconCount);
-                _reelSpeed = 0f;
-                return;
-            }
+            _reelSettle.Advance(dt);
+            ReelPosition = _reelSettle.Position;
+            if (!_reelSettle.IsDone) return false;
 
-            _handoffTimer += dt;
-            if (_handoffTimer < _settings.HandoffDelay) return;
-
-            _machine.NotifyReelStopped();
-            BeginRingStop();
+            ReelPosition = Mod(_reelTarget, RingLayout.IconCount);
+            _reelSpeed = 0f;
+            return true;
         }
 
-        private void BeginRingStop()
-        {
-            var baseSlot = (int)Math.Floor(RingPosition);
-            var steps = StopPlanner.StepsToTarget(Mod(baseSlot, RingLayout.SlotCount), TargetIcon, Layout);
-            var speed = Math.Max(_ringSpeed, _settings.RingSpinSpeed * _settings.MinStopSpeedRatio);
-            _ringStop = DecelerationMotion.FromSpeed(RingPosition, baseSlot + steps, speed, EaseKind.OutQuad);
-        }
-
-        private void TickRingStop(float dt)
+        private void AdvanceRingStop(float dt)
         {
             _ringStop.Advance(dt);
             RingPosition = _ringStop.Position;
-            if (!_ringStop.IsDone) return;
+        }
 
+        private void FinishRound()
+        {
             RingPosition = Mod((int)_ringStop.End, RingLayout.SlotCount);
             _ringSpeed = 0f;
             HasResult = true;

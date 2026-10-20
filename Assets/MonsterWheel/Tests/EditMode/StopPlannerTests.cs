@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using MonsterWheel.Core;
 using NUnit.Framework;
 
@@ -9,7 +10,8 @@ namespace MonsterWheel.Tests
         private int[] _layout;
 
         [SetUp]
-        public void SetUp() => _layout = RingLayout.BuildIconOrder();
+        // Fixed layout (slot i = icon i mod 9) so these tests don't depend on the ring's visual order.
+        public void SetUp() => _layout = Enumerable.Range(0, 18).Select(i => i % 9).ToArray();
 
         [Test]
         public void Result_LandsOnTargetIcon()
@@ -55,6 +57,16 @@ namespace MonsterWheel.Tests
         public void SameSlotIcon_RequiresFullLap()
         {
             Assert.AreEqual(18, StopPlanner.StepsToTarget(0, 0, _layout));
+        }
+
+        [Test]
+        public void FirstMatchAtOrAfter_RespectsMinSteps()
+        {
+            Assert.AreEqual(0, StopPlanner.FirstMatchAtOrAfter(0, 0, _layout, 0));
+            Assert.AreEqual(9, StopPlanner.FirstMatchAtOrAfter(0, 0, _layout, 1));
+            Assert.AreEqual(9, StopPlanner.FirstMatchAtOrAfter(0, 0, _layout, 9));
+            Assert.AreEqual(18, StopPlanner.FirstMatchAtOrAfter(0, 0, _layout, 10));
+            Assert.AreEqual(25, StopPlanner.FirstMatchAtOrAfter(3, 1, _layout, 20));
         }
 
         [Test]

@@ -155,6 +155,36 @@ namespace MonsterWheel.Tests
         }
 
         [Test]
+        public void Ring_StopsShortlyAfterReel_AndSlowsDownTogetherWithIt()
+        {
+            var engine = NewEngine(31);
+            var dtRng = new Random(5);
+            for (var round = 0; round < 300; round++)
+            {
+                engine.Press();
+                var spin = 0.05f + (float)dtRng.NextDouble() * 1.5f;
+                for (var t = 0f; t < spin; t += 1f / 60f) engine.Tick(1f / 60f);
+                engine.Press();
+
+                var ringSlowedWhileReelStopping = false;
+                float reelDoneAt = -1f, t2 = 0f;
+                for (var i = 0; i < 100000 && engine.State != WheelState.Idle; i++)
+                {
+                    var dt = 0.005f + (float)dtRng.NextDouble() * 0.03f;
+                    engine.Tick(dt);
+                    t2 += dt;
+                    if (engine.State == WheelState.StoppingReel && engine.RingSpeedRatio < 0.9f)
+                        ringSlowedWhileReelStopping = true;
+                    if (reelDoneAt < 0f && engine.State != WheelState.StoppingReel) reelDoneAt = t2;
+                }
+
+                Assert.IsTrue(ringSlowedWhileReelStopping, $"round {round}: ring did not slow down with the reel");
+                Assert.That(t2 - reelDoneAt, Is.LessThanOrEqualTo(1.5f), $"round {round}: ring stopped {t2 - reelDoneAt}s after reel");
+                AssertMatch(engine);
+            }
+        }
+
+        [Test]
         public void SpeedRatios_AreZeroWhenIdle_AndFullWhileSpinning()
         {
             var engine = NewEngine(4);

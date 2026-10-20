@@ -27,7 +27,7 @@ MonoBehaviour:
   SpinUpTime: 0.3
   ReelOvershoot: 0.2
   ReelSettleTime: 0.25
-  HandoffDelay: 0.15
+  RingStopLag: 0.3
   MinStopSpeedRatio: 0.5
   TrailDecay: 0.25
   PulsePeriod: 0.6

@@ -21,6 +21,16 @@ namespace MonsterWheel.Tests
         }
 
         [Test]
+        public void IsShiftedTwoSlotsClockwise()
+        {
+            var order = RingLayout.BuildIconOrder();
+            Assert.AreEqual(7, order[0]);
+            Assert.AreEqual(8, order[1]);
+            Assert.AreEqual(0, order[2]);
+            Assert.AreEqual(0, order[11]);
+        }
+
+        [Test]
         public void IsPointSymmetric()
         {
             var order = RingLayout.BuildIconOrder();
