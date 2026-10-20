@@ -15,8 +15,10 @@ namespace MonsterWheel.Core
         private float _ringSpeed;
         private float _reelSpeed;
         private DecelerationMotion _reelStop;
+        private DecelerationMotion _reelSettle;
         private DecelerationMotion _ringStop;
         private float _handoffTimer;
+        private int _reelTarget;
 
         public WheelEngine(WheelSettings settings, IRandom random)
         {
@@ -43,7 +45,9 @@ namespace MonsterWheel.Core
             (_ringStop != null ? _ringStop.Speed : _ringSpeed) / _settings.RingSpinSpeed;
 
         public float ReelSpeedRatio =>
-            Math.Abs(_reelStop != null ? _reelStop.Speed : _reelSpeed) / _settings.ReelSpinSpeed;
+            Math.Abs(CurrentReelMotion != null ? CurrentReelMotion.Speed : _reelSpeed) / _settings.ReelSpinSpeed;
+
+        private DecelerationMotion CurrentReelMotion => _reelSettle ?? _reelStop;
 
         public void Press()
         {
@@ -55,6 +59,7 @@ namespace MonsterWheel.Core
                 HasResult = false;
                 _ringStop = null;
                 _reelStop = null;
+                _reelSettle = null;
             }
             else
             {
@@ -103,8 +108,12 @@ namespace MonsterWheel.Core
             var end = (int)Math.Ceiling(ReelPosition) + RingLayout.IconCount;
             end += Mod(TargetIcon - end, RingLayout.IconCount);
 
+            // Decelerate slightly past the target, then settle back: a fixed-size overshoot that never
+            // brings the neighbouring icon to the center.
+            _reelTarget = end;
             var speed = Math.Max(_reelSpeed, _settings.ReelSpinSpeed * _settings.MinStopSpeedRatio);
-            _reelStop = DecelerationMotion.FromSpeed(ReelPosition, end, speed, EaseKind.OutBack, _settings.ReelBackOvershoot);
+            _reelStop = DecelerationMotion.FromSpeed(ReelPosition, end + _settings.ReelOvershoot, speed, EaseKind.OutCubic);
+            _reelSettle = null;
             _handoffTimer = 0f;
         }
 
@@ -114,8 +123,17 @@ namespace MonsterWheel.Core
             {
                 _reelStop.Advance(dt);
                 ReelPosition = _reelStop.Position;
-                if (!_reelStop.IsDone) return;
-                ReelPosition = Mod((int)_reelStop.End, RingLayout.IconCount);
+                if (_reelStop.IsDone)
+                    _reelSettle = new DecelerationMotion(ReelPosition, _reelTarget, _settings.ReelSettleTime, EaseKind.OutQuad);
+                return;
+            }
+
+            if (!_reelSettle.IsDone)
+            {
+                _reelSettle.Advance(dt);
+                ReelPosition = _reelSettle.Position;
+                if (!_reelSettle.IsDone) return;
+                ReelPosition = Mod(_reelTarget, RingLayout.IconCount);
                 _reelSpeed = 0f;
                 return;
             }

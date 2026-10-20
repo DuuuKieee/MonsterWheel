@@ -16,7 +16,9 @@ namespace MonsterWheel.View
         [Tooltip("Reel speed while spinning (icons per second).")]
         public float ReelSpinSpeed = 24f;
         public float SpinUpTime = 0.3f;
-        public float ReelBackOvershoot = 1.2f;
+        [Tooltip("Icons the reel overshoots before settling back. Below 0.5 so the wrong monster is never centered.")]
+        [Range(0f, 0.45f)] public float ReelOvershoot = 0.2f;
+        public float ReelSettleTime = 0.25f;
         public float HandoffDelay = 0.15f;
         [Range(0.05f, 1f)] public float MinStopSpeedRatio = 0.5f;
 
@@ -45,7 +47,8 @@ namespace MonsterWheel.View
             Positive(RingSpinSpeed, nameof(RingSpinSpeed));
             Positive(ReelSpinSpeed, nameof(ReelSpinSpeed));
             Positive(SpinUpTime, nameof(SpinUpTime));
-            Positive(ReelBackOvershoot, nameof(ReelBackOvershoot));
+            Positive(ReelSettleTime, nameof(ReelSettleTime));
+            if (ReelOvershoot < 0f || ReelOvershoot >= 0.5f) errors.Add("ReelOvershoot must be in [0, 0.5).");
             Positive(HandoffDelay, nameof(HandoffDelay));
             Positive(MinStopSpeedRatio, nameof(MinStopSpeedRatio));
             Positive(TrailDecay, nameof(TrailDecay));
@@ -61,7 +64,8 @@ namespace MonsterWheel.View
             s.RingSpinSpeed = RingSpinSpeed;
             s.ReelSpinSpeed = ReelSpinSpeed;
             s.SpinUpTime = SpinUpTime;
-            s.ReelBackOvershoot = ReelBackOvershoot;
+            s.ReelOvershoot = ReelOvershoot;
+            s.ReelSettleTime = ReelSettleTime;
             s.HandoffDelay = HandoffDelay;
             s.MinStopSpeedRatio = MinStopSpeedRatio;
             return s;

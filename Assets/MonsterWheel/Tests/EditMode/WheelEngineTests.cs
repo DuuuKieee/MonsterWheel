@@ -125,6 +125,36 @@ namespace MonsterWheel.Tests
         }
 
         [Test]
+        public void ReelOvershoot_StaysUnderHalfAnIcon()
+        {
+            var engine = NewEngine(21);
+            for (var round = 0; round < 200; round++)
+            {
+                engine.Press();
+                for (var i = 0; i < 30; i++) engine.Tick(1f / 60f);
+                engine.Press();
+
+                // Track the unwrapped reel position through the stop.
+                var unwrapped = 0f;
+                var max = 0f;
+                var prev = engine.ReelPosition;
+                for (var i = 0; i < 100000 && engine.State != WheelState.Idle; i++)
+                {
+                    engine.Tick(1f / 60f);
+                    var d = engine.ReelPosition - prev;
+                    d = ((d % 9f) + 9f + 4.5f) % 9f - 4.5f;
+                    unwrapped += d;
+                    max = Math.Max(max, unwrapped);
+                    prev = engine.ReelPosition;
+                }
+
+                var overshoot = max - unwrapped;
+                Assert.That(overshoot, Is.LessThan(0.5f), $"round {round}: reel overshot {overshoot} icons");
+                AssertMatch(engine);
+            }
+        }
+
+        [Test]
         public void SpeedRatios_AreZeroWhenIdle_AndFullWhileSpinning()
         {
             var engine = NewEngine(4);

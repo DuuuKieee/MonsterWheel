@@ -8,8 +8,10 @@ namespace MonsterWheel.Core
         public float ReelSpinSpeed;
         /// <summary>Time to ramp from rest to full spin speed.</summary>
         public float SpinUpTime;
-        /// <summary>Overshoot amount of the reel's OutBack stop.</summary>
-        public float ReelBackOvershoot;
+        /// <summary>How far (in icons) the reel overshoots its target before settling back. Keep below 0.5.</summary>
+        public float ReelOvershoot;
+        /// <summary>Time for the reel to settle back from the overshoot onto the target.</summary>
+        public float ReelSettleTime;
         /// <summary>Pause between the reel stopping and the ring starting to stop.</summary>
         public float HandoffDelay;
         /// <summary>Upper bound for a single Tick's dt.</summary>
@@ -22,7 +24,8 @@ namespace MonsterWheel.Core
             RingSpinSpeed = 18f,
             ReelSpinSpeed = 24f,
             SpinUpTime = 0.3f,
-            ReelBackOvershoot = 1.2f,
+            ReelOvershoot = 0.2f,
+            ReelSettleTime = 0.25f,
             HandoffDelay = 0.15f,
             MaxDeltaTime = 0.1f,
             MinStopSpeedRatio = 0.5f

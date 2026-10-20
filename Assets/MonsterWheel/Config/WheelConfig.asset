@@ -25,7 +25,8 @@ MonoBehaviour:
   RingSpinSpeed: 18
   ReelSpinSpeed: 24
   SpinUpTime: 0.3
-  ReelBackOvershoot: 1.2
+  ReelOvershoot: 0.2
+  ReelSettleTime: 0.25
   HandoffDelay: 0.15
   MinStopSpeedRatio: 0.5
   TrailDecay: 0.25

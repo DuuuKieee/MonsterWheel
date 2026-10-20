@@ -36,6 +36,9 @@ namespace MonsterWheel.EditorTools
         [MenuItem("Tools/Monster Wheel/Build Scene")]
         public static void Build()
         {
+            // Building opens a new scene; let the user save (or cancel) pending changes first.
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
             ConfigureArtImport();
             var halo = CreateHaloSprite();
             var config = CreateConfig();
