@@ -6,7 +6,7 @@ A 720x1280 Unity mini-game: a ring of 18 monster slots lights up clockwise aroun
 
 | Press Space | What happens |
 |---|---|
-| 1st | Reel spins, ring light chases clockwise |
+| 1st | Reel pulls back a little (wind-up), then spins; ring light chases clockwise |
 | 2nd | Reel and ring light decelerate together: the reel lands on a random monster, and the ring comes to rest on a slot with the **same** monster about 0.3–1.3 s later |
 | 3rd | New round |
 
@@ -38,7 +38,7 @@ Stops start from the current spin speed (duration = curve slope × distance / sp
 
 ## Tests
 
-*Window > General > Test Runner > EditMode > Run All* (36 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
+*Window > General > Test Runner > EditMode > Run All* (39 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
 
 ## Rebuild the scene
 

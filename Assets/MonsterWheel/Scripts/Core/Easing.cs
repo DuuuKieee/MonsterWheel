@@ -4,7 +4,9 @@ namespace MonsterWheel.Core
     {
         OutQuad,
         OutCubic,
-        OutBack
+        OutBack,
+        /// <summary>Starts and ends at rest (3t² - 2t³).</summary>
+        SmoothStep
     }
 
     public static class Easing
@@ -36,6 +38,9 @@ namespace MonsterWheel.Core
             {
                 case EaseKind.OutQuad: return OutQuad(t);
                 case EaseKind.OutBack: return OutBack(t, backOvershoot);
+                case EaseKind.SmoothStep:
+                    t = Clamp01(t);
+                    return t * t * (3f - 2f * t);
                 default: return OutCubic(t);
             }
         }
@@ -49,6 +54,7 @@ namespace MonsterWheel.Core
             {
                 case EaseKind.OutQuad: return -2f * u;
                 case EaseKind.OutBack: return 3f * (backOvershoot + 1f) * u * u + 2f * backOvershoot * u;
+                case EaseKind.SmoothStep: return 6f * t * (1f - t);
                 default: return 3f * u * u;
             }
         }

@@ -185,6 +185,43 @@ namespace MonsterWheel.Tests
         }
 
         [Test]
+        public void Reel_WindsUpBackwards_ThenSpinsForward()
+        {
+            var settings = WheelSettings.Default;
+            var engine = new WheelEngine(settings, new SystemRandom(8));
+            var start = engine.ReelPosition;
+            engine.Press();
+
+            // Unwrapped reel position over the first second.
+            var pos = start;
+            var prev = engine.ReelPosition;
+            var min = pos;
+            var minAt = 0f;
+            for (var t = 0f; t < 1f; t += 1f / 120f)
+            {
+                engine.Tick(1f / 120f);
+                var d = engine.ReelPosition - prev;
+                d = ((d % 9f) + 9f + 4.5f) % 9f - 4.5f;
+                pos += d;
+                prev = engine.ReelPosition;
+                if (pos < min) { min = pos; minAt = t; }
+            }
+
+            Assert.AreEqual(start - settings.ReelWindUpDistance, min, 0.01f, "reel should pull back by the wind-up distance");
+            Assert.AreEqual(settings.ReelWindUpTime, minAt, 0.02f, "pull-back should end after the wind-up time");
+            Assert.That(pos, Is.GreaterThan(start + 5f), "reel should then spin forward");
+        }
+
+        [Test]
+        public void Ring_StartsImmediately_DuringReelWindUp()
+        {
+            var engine = NewEngine(9);
+            engine.Press();
+            for (var i = 0; i < 6; i++) engine.Tick(1f / 60f);
+            Assert.That(engine.RingSpeedRatio, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void SpeedRatios_AreZeroWhenIdle_AndFullWhileSpinning()
         {
             var engine = NewEngine(4);

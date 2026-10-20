@@ -22,6 +22,16 @@ namespace MonsterWheel.Tests
             Assert.AreEqual(1f, Easing.Evaluate(EaseKind.OutQuad, 1f, 0f), 1e-5f);
         }
 
+        [Test]
+        public void SmoothStep_StartsAndEndsAtRest()
+        {
+            Assert.AreEqual(0f, Easing.Evaluate(EaseKind.SmoothStep, 0f, 0f), 1e-5f);
+            Assert.AreEqual(0.5f, Easing.Evaluate(EaseKind.SmoothStep, 0.5f, 0f), 1e-5f);
+            Assert.AreEqual(1f, Easing.Evaluate(EaseKind.SmoothStep, 1f, 0f), 1e-5f);
+            Assert.AreEqual(0f, Easing.Slope(EaseKind.SmoothStep, 0f, 0f), 1e-5f);
+            Assert.AreEqual(0f, Easing.Slope(EaseKind.SmoothStep, 1f, 0f), 1e-5f);
+        }
+
         [TestCase(EaseKind.OutQuad)]
         [TestCase(EaseKind.OutCubic)]
         [TestCase(EaseKind.OutBack)]

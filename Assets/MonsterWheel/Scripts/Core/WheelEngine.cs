@@ -14,6 +14,7 @@ namespace MonsterWheel.Core
 
         private float _ringSpeed;
         private float _reelSpeed;
+        private DecelerationMotion _reelWindUp;
         private DecelerationMotion _reelStop;
         private DecelerationMotion _reelSettle;
         private DecelerationMotion _ringStop;
@@ -46,7 +47,9 @@ namespace MonsterWheel.Core
         public float ReelSpeedRatio =>
             Math.Abs(CurrentReelMotion != null ? CurrentReelMotion.Speed : _reelSpeed) / _settings.ReelSpinSpeed;
 
-        private DecelerationMotion CurrentReelMotion => _reelSettle ?? _reelStop;
+        private DecelerationMotion CurrentReelMotion => _reelSettle ?? _reelStop ?? ActiveWindUp;
+
+        private DecelerationMotion ActiveWindUp => _reelWindUp != null && !_reelWindUp.IsDone ? _reelWindUp : null;
 
         public void Press()
         {
@@ -59,6 +62,7 @@ namespace MonsterWheel.Core
                 _ringStop = null;
                 _reelStop = null;
                 _reelSettle = null;
+                BeginReelWindUp();
             }
             else
             {
@@ -75,7 +79,8 @@ namespace MonsterWheel.Core
             {
                 case WheelState.Spinning:
                     SpinRing(dt);
-                    SpinReel(dt);
+                    if (ActiveWindUp != null) AdvanceReelWindUp(dt);
+                    else SpinReel(dt);
                     break;
                 case WheelState.StoppingReel:
                     AdvanceRingStop(dt);
@@ -100,6 +105,21 @@ namespace MonsterWheel.Core
             ReelPosition = Wrap(ReelPosition + _reelSpeed * dt, RingLayout.IconCount);
         }
 
+        /// <summary>The reel pulls back a little before launching forward, like gathering momentum.</summary>
+        private void BeginReelWindUp()
+        {
+            _reelWindUp = _settings.ReelWindUpDistance > 0f && _settings.ReelWindUpTime > 0f
+                ? new DecelerationMotion(ReelPosition, ReelPosition - _settings.ReelWindUpDistance,
+                    _settings.ReelWindUpTime, EaseKind.SmoothStep)
+                : null;
+        }
+
+        private void AdvanceReelWindUp(float dt)
+        {
+            _reelWindUp.Advance(dt);
+            ReelPosition = Wrap(_reelWindUp.Position, RingLayout.IconCount);
+        }
+
         /// <summary>Picks the result and starts reel and ring decelerating together.</summary>
         private void BeginStop()
         {
@@ -118,6 +138,7 @@ namespace MonsterWheel.Core
             // Decelerate slightly past the target, then settle back: a fixed-size overshoot that never
             // brings the neighbouring icon to the center.
             _reelTarget = end;
+            _reelWindUp = null;
             var speed = Math.Max(_reelSpeed, _settings.ReelSpinSpeed * _settings.MinStopSpeedRatio);
             _reelStop = DecelerationMotion.FromSpeed(ReelPosition, end + _settings.ReelOvershoot, speed, EaseKind.OutCubic);
             _reelSettle = null;
@@ -131,12 +152,19 @@ namespace MonsterWheel.Core
         /// </summary>
         private void BeginRingStop(float minDuration)
         {
+            var slope = Easing.Slope(EaseKind.OutQuad, 0f, 0f);
             var speed = Math.Max(_ringSpeed, _settings.RingSpinSpeed * _settings.MinStopSpeedRatio);
-            var minDistance = speed * minDuration / Easing.Slope(EaseKind.OutQuad, 0f, 0f);
+            var minDistance = speed * minDuration / slope;
             var baseSlot = (int)Math.Floor(RingPosition);
             var frac = RingPosition - baseSlot;
             var steps = StopPlanner.FirstMatchAtOrAfter(
                 Mod(baseSlot, RingLayout.SlotCount), TargetIcon, Layout, (int)Math.Ceiling(minDistance + frac));
+
+            // The matching slot can be up to half a lap further than needed. Covering it at the current
+            // speed takes longer than minDuration, which matters while the ring is still spinning up.
+            // So pick the speed that ends exactly at minDuration, capped at the normal spin speed.
+            var distance = steps - frac;
+            speed = Math.Min(distance * slope / minDuration, Math.Max(speed, _settings.RingSpinSpeed));
             _ringStop = DecelerationMotion.FromSpeed(RingPosition, baseSlot + steps, speed, EaseKind.OutQuad);
         }
 
