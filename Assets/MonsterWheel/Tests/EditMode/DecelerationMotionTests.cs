@@ -16,6 +16,28 @@ namespace MonsterWheel.Tests
         }
 
         [Test]
+        public void OutQuad_Endpoints()
+        {
+            Assert.AreEqual(0f, Easing.Evaluate(EaseKind.OutQuad, 0f, 0f), 1e-5f);
+            Assert.AreEqual(1f, Easing.Evaluate(EaseKind.OutQuad, 1f, 0f), 1e-5f);
+        }
+
+        [TestCase(EaseKind.OutQuad)]
+        [TestCase(EaseKind.OutCubic)]
+        [TestCase(EaseKind.OutBack)]
+        public void FromSpeed_StartsAtGivenSpeed_AndEndsExactly(EaseKind ease)
+        {
+            var m = DecelerationMotion.FromSpeed(2f, 30f, 18f, ease, 1.2f);
+            Assert.AreEqual(18f, m.Speed, 1e-3f);
+            const float h = 1e-4f;
+            m.Advance(h);
+            Assert.AreEqual(18f, (m.Position - 2f) / h, 0.05f);
+            while (!m.IsDone) m.Advance(1f / 60f);
+            Assert.AreEqual(30f, m.Position);
+            Assert.AreEqual(0f, m.Speed);
+        }
+
+        [Test]
         public void Motion_EndsExactlyAtEnd_FixedDt()
         {
             var m = new DecelerationMotion(3.4f, 40f, 2f, EaseKind.OutCubic);

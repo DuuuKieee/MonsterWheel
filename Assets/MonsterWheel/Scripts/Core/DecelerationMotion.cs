@@ -22,12 +22,25 @@ namespace MonsterWheel.Core
             Position = start;
         }
 
+        /// <summary>
+        /// Builds a motion whose initial speed equals <paramref name="startSpeed"/>, so it continues
+        /// seamlessly from a constant-speed spin. Duration = slope(0) * distance / startSpeed.
+        /// </summary>
+        public static DecelerationMotion FromSpeed(float start, float end, float startSpeed, EaseKind ease, float backOvershoot = 1.2f)
+        {
+            var duration = Easing.Slope(ease, 0f, backOvershoot) * (end - start) / startSpeed;
+            return new DecelerationMotion(start, end, duration, ease, backOvershoot);
+        }
+
         public float Position { get; private set; }
         public float End { get; }
+        public float Duration => _duration;
         public bool IsDone { get; private set; }
 
-        /// <summary>Normalized progress in [0, 1].</summary>
-        public float Progress => _duration <= 0f ? 1f : (_elapsed >= _duration ? 1f : _elapsed / _duration);
+        /// <summary>Current velocity in position units per second (0 once done).</summary>
+        public float Speed => IsDone || _duration <= 0f
+            ? 0f
+            : (End - _start) / _duration * Easing.Slope(_ease, _elapsed / _duration, _backOvershoot);
 
         public void Advance(float dt)
         {
