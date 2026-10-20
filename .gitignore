@@ -18,3 +18,5 @@
 *.mdb
 *.opendb
 *.VC.db
+.vscode/
+.superpowers/
