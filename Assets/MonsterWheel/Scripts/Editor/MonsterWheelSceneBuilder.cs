@@ -1,0 +1,222 @@
+using System.IO;
+using MonsterWheel.Core;
+using MonsterWheel.View;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace MonsterWheel.EditorTools
+{
+    /// <summary>
+    /// Builds the Monster Wheel scene, its config asset and halo texture from the art in Assets/assets.
+    /// Idempotent: running it again overwrites the generated files.
+    /// </summary>
+    public static class MonsterWheelSceneBuilder
+    {
+        private const string ArtFolder = "Assets/assets";
+        private const string Root = "Assets/MonsterWheel";
+        private const string HaloPath = Root + "/Textures/Halo.png";
+        private const string ConfigPath = Root + "/Config/WheelConfig.asset";
+        public const string ScenePath = Root + "/Scenes/MonsterWheel.unity";
+
+        private static readonly Vector2 ReferenceResolution = new Vector2(720f, 1280f);
+        private static readonly float[] Columns = { 110f, 263f, 457f, 610f };
+        private const float FirstRowY = 150f;
+        private const float LastRowY = 1130f;
+        private const int Rows = 7;
+        private const float IconSize = 130f;
+        private const float HaloSize = 200f;
+        private static readonly Vector2 FrameSize = new Vector2(170f, 250f);
+        private const float FrameInset = 8f;
+        private const float ReelIconSize = 110f;
+        private const float ReelItemHeight = 120f;
+        private const int ReelItemCount = 5;
+
+        [MenuItem("Tools/Monster Wheel/Build Scene")]
+        public static void Build()
+        {
+            ConfigureArtImport();
+            var halo = CreateHaloSprite();
+            var config = CreateConfig();
+            BuildScene(config, halo);
+            ConfigurePlayer();
+            Debug.Log($"[MonsterWheel] Scene built at {ScenePath}");
+        }
+
+        /// <summary>Slot centers in reference pixels (origin top-left), slot 0 top-left, clockwise.</summary>
+        public static Vector2[] SlotCenters()
+        {
+            var step = (LastRowY - FirstRowY) / (Rows - 1);
+            float RowY(int r) => FirstRowY + r * step;
+            var slots = new Vector2[RingLayout.SlotCount];
+            var n = 0;
+            for (var c = 0; c < Columns.Length; c++) slots[n++] = new Vector2(Columns[c], RowY(0));
+            for (var r = 1; r < Rows - 1; r++) slots[n++] = new Vector2(Columns[Columns.Length - 1], RowY(r));
+            for (var c = Columns.Length - 1; c >= 0; c--) slots[n++] = new Vector2(Columns[c], RowY(Rows - 1));
+            for (var r = Rows - 2; r >= 1; r--) slots[n++] = new Vector2(Columns[0], RowY(r));
+            return slots;
+        }
+
+        private static void ConfigureArtImport()
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { ArtFolder }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                if (path.EndsWith("frame.png")) importer.spriteBorder = new Vector4(12f, 12f, 12f, 12f);
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static Sprite CreateHaloSprite()
+        {
+            const int size = 128;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var center = (size - 1) / 2f;
+            for (var y = 0; y < size; y++)
+            for (var x = 0; x < size; x++)
+            {
+                var d = Mathf.Clamp01(Vector2.Distance(new Vector2(x, y), new Vector2(center, center)) / center);
+                var a = (1f - d) * (1f - d);
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+            }
+            tex.Apply();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(HaloPath));
+            File.WriteAllBytes(HaloPath, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(HaloPath);
+
+            var importer = (TextureImporter)AssetImporter.GetAtPath(HaloPath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(HaloPath);
+        }
+
+        private static WheelConfig CreateConfig()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<WheelConfig>(ConfigPath);
+            if (config == null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
+                config = ScriptableObject.CreateInstance<WheelConfig>();
+                AssetDatabase.CreateAsset(config, ConfigPath);
+            }
+
+            config.Icons = new Sprite[RingLayout.IconCount];
+            for (var i = 0; i < RingLayout.IconCount; i++)
+                config.Icons[i] = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtFolder}/icon ({i + 1}).png");
+
+            EditorUtility.SetDirty(config);
+            AssetDatabase.SaveAssets();
+            return config;
+        }
+
+        private static void BuildScene(WheelConfig config, Sprite halo)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var camGo = new GameObject("Main Camera", typeof(Camera));
+            camGo.tag = "MainCamera";
+            var cam = camGo.GetComponent<Camera>();
+            cam.orthographic = true;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = Color.black;
+            camGo.transform.position = new Vector3(0f, 0f, -10f);
+
+            var canvasGo = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            canvasGo.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = ReferenceResolution;
+            // Expand keeps the whole 720x1280 board visible on any aspect ratio.
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            var canvas = canvasGo.transform;
+
+            // Fixed 720x1280 board centered on screen; everything else lives inside it.
+            var board = NewRect("Board", canvas, ReferenceResolution, Vector2.zero);
+
+            var bg = NewImage("Background", board, ReferenceResolution, Vector2.zero,
+                AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtFolder}/background.jpg"));
+            bg.preserveAspect = false;
+
+            var ring = NewRect("Ring", board, ReferenceResolution, Vector2.zero).gameObject.AddComponent<RingView>();
+            var centers = SlotCenters();
+            ring.Slots = new SlotView[centers.Length];
+            for (var i = 0; i < centers.Length; i++)
+            {
+                var slotRect = NewRect($"Slot{i:00}", ring.transform, new Vector2(IconSize, IconSize), ToAnchored(centers[i]));
+                var slot = slotRect.gameObject.AddComponent<SlotView>();
+                slot.Halo = NewImage("Halo", slotRect, new Vector2(HaloSize, HaloSize), Vector2.zero, halo);
+                slot.Icon = NewImage("Icon", slotRect, new Vector2(IconSize, IconSize), Vector2.zero, null);
+                slot.Icon.preserveAspect = true;
+                ring.Slots[i] = slot;
+            }
+
+            var frame = NewImage("ReelFrame", board, FrameSize, Vector2.zero,
+                AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtFolder}/frame.png"));
+            frame.type = Image.Type.Sliced;
+            var viewport = NewRect("Viewport", frame.transform, FrameSize - Vector2.one * (2f * FrameInset), Vector2.zero);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            var reel = frame.gameObject.AddComponent<ReelView>();
+            reel.ItemHeight = ReelItemHeight;
+            reel.Items = new Image[ReelItemCount];
+            for (var j = 0; j < ReelItemCount; j++)
+            {
+                reel.Items[j] = NewImage($"Item{j}", viewport, new Vector2(ReelIconSize, ReelIconSize), Vector2.zero, null);
+                reel.Items[j].preserveAspect = true;
+            }
+
+            var controller = new GameObject("MonsterWheel").AddComponent<MonsterWheelController>();
+            controller.Config = config;
+            controller.Ring = ring;
+            controller.Reel = reel;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        private static void ConfigurePlayer()
+        {
+            PlayerSettings.productName = "Monster Wheel";
+            PlayerSettings.defaultScreenWidth = (int)ReferenceResolution.x;
+            PlayerSettings.defaultScreenHeight = (int)ReferenceResolution.y;
+            PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+            PlayerSettings.resizableWindow = false;
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>Reference pixels (origin top-left) → anchored position from the board center.</summary>
+        private static Vector2 ToAnchored(Vector2 px) =>
+            new Vector2(px.x - ReferenceResolution.x / 2f, ReferenceResolution.y / 2f - px.y);
+
+        private static RectTransform NewRect(string name, Transform parent, Vector2 size, Vector2 anchored)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchored;
+            return rect;
+        }
+
+        private static Image NewImage(string name, Transform parent, Vector2 size, Vector2 anchored, Sprite sprite)
+        {
+            var rect = NewRect(name, parent, size, anchored);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.raycastTarget = false;
+            return image;
+        }
+    }
+}
