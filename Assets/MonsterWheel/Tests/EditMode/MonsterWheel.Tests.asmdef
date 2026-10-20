@@ -3,6 +3,7 @@
     "rootNamespace": "MonsterWheel.Tests",
     "references": [
         "MonsterWheel.Core",
+        "MonsterWheel.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

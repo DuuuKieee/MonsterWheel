@@ -21,16 +21,19 @@ namespace MonsterWheel.EditorTools
         public const string ScenePath = Root + "/Scenes/MonsterWheel.unity";
 
         private static readonly Vector2 ReferenceResolution = new Vector2(720f, 1280f);
-        private static readonly float[] Columns = { 110f, 263f, 457f, 610f };
+        // Four evenly spaced columns between the left and right edge columns.
+        private const float LeftColumnX = 110f;
+        private const float RightColumnX = 610f;
+        private const int ColumnCount = 4;
         private const float FirstRowY = 150f;
         private const float LastRowY = 1130f;
         private const int Rows = 7;
         private const float IconSize = 130f;
         private const float HaloSize = 200f;
-        private static readonly Vector2 FrameSize = new Vector2(170f, 250f);
+        private static readonly Vector2 FrameSize = new Vector2(250f, 350f);
         private const float FrameInset = 8f;
-        private const float ReelIconSize = 110f;
-        private const float ReelItemHeight = 120f;
+        private const float ReelIconSize = 150f;
+        private const float ReelItemHeight = 160f;
         private const int ReelItemCount = 5;
 
         [MenuItem("Tools/Monster Wheel/Build Scene")]
@@ -52,12 +55,14 @@ namespace MonsterWheel.EditorTools
         {
             var step = (LastRowY - FirstRowY) / (Rows - 1);
             float RowY(int r) => FirstRowY + r * step;
+            var colStep = (RightColumnX - LeftColumnX) / (ColumnCount - 1);
+            float ColX(int c) => LeftColumnX + c * colStep;
             var slots = new Vector2[RingLayout.SlotCount];
             var n = 0;
-            for (var c = 0; c < Columns.Length; c++) slots[n++] = new Vector2(Columns[c], RowY(0));
-            for (var r = 1; r < Rows - 1; r++) slots[n++] = new Vector2(Columns[Columns.Length - 1], RowY(r));
-            for (var c = Columns.Length - 1; c >= 0; c--) slots[n++] = new Vector2(Columns[c], RowY(Rows - 1));
-            for (var r = Rows - 2; r >= 1; r--) slots[n++] = new Vector2(Columns[0], RowY(r));
+            for (var c = 0; c < ColumnCount; c++) slots[n++] = new Vector2(ColX(c), RowY(0));
+            for (var r = 1; r < Rows - 1; r++) slots[n++] = new Vector2(RightColumnX, RowY(r));
+            for (var c = ColumnCount - 1; c >= 0; c--) slots[n++] = new Vector2(ColX(c), RowY(Rows - 1));
+            for (var r = Rows - 2; r >= 1; r--) slots[n++] = new Vector2(LeftColumnX, RowY(r));
             return slots;
         }
 
