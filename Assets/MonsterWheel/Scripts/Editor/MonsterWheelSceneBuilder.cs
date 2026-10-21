@@ -9,14 +9,14 @@ using UnityEngine.UI;
 namespace MonsterWheel.EditorTools
 {
     /// <summary>
-    /// Builds the Monster Wheel scene, its config asset and halo texture from the art in Assets/assets.
+    /// Builds the Monster Wheel scene, its config asset and halo texture from the art in Assets/Assets/Art and the sounds in Assets/Assets/Audio.
     /// Idempotent: running it again overwrites the generated files.
     /// </summary>
     public static class MonsterWheelSceneBuilder
     {
-        private const string ArtFolder = "Assets/assets";
-        private const string SpinClipPath = "Assets/audio/freesound_community-wheel-spin-click-slow-down-101152.mp3";
-        private const string ResultClipPath = "Assets/audio/a_onclick_to_outro_magiccoin_fx.wav";
+        private const string ArtFolder = "Assets/Assets/Art";
+        private const string SpinClipPath = "Assets/Assets/Audio/freesound_community-wheel-spin-click-slow-down-101152.mp3";
+        private const string ResultClipPath = "Assets/Assets/Audio/a_onclick_to_outro_magiccoin_fx.wav";
         private const string SpinLoopPath = Root + "/Audio/SpinLoop.wav";
         private const string SpinTailPath = Root + "/Audio/SpinTail.wav";
         // Steady click section of the spin sound; the slow-down tail runs from SpinLoopEnd to the end.

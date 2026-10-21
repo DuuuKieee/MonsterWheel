@@ -12,7 +12,7 @@ A 720x1280 Unity mini-game: a ring of 18 monster slots lights up clockwise aroun
 
 Space is ignored while the wheel is stopping.
 
-Sound: *Build Scene* cuts the spin mp3 into `Assets/MonsterWheel/Audio/SpinLoop.wav` (0.03–1.30 s, looped while spinning) and `SpinTail.wav` (pre-cut at edit time because WebGL cannot read or create audio samples at runtime); the tail is scheduled so its last click lands exactly when the ring stops; `a_onclick_to_outro_magiccoin_fx.wav` plays once when the result is shown. Tune in `WheelConfig` (Audio section).
+Sound: *Build Scene* cuts the spin mp3 (`Assets/Assets/Audio`) into `Assets/MonsterWheel/Audio/SpinLoop.wav` (0.03–1.30 s, looped while spinning) and `SpinTail.wav` (pre-cut at edit time because WebGL cannot read or create audio samples at runtime); the tail is scheduled so its last click lands exactly when the ring stops; `a_onclick_to_outro_magiccoin_fx.wav` plays once when the result is shown. Tune in `WheelConfig` (Audio section).
 
 ## Run
 
@@ -45,7 +45,7 @@ Stops start from the current spin speed (duration = curve slope × distance / sp
 
 ## Rebuild the scene
 
-*Tools > Monster Wheel > Build Scene* regenerates the scene, config asset, halo texture, sprite import settings and player resolution from `Assets/assets`.
+*Tools > Monster Wheel > Build Scene* regenerates the scene, config asset, halo texture, sprite import settings and player resolution from `Assets/Assets/Art` and `Assets/Assets/Audio`.
 
 ## Docs
 
