@@ -17,6 +17,11 @@ namespace MonsterWheel.EditorTools
         private const string ArtFolder = "Assets/assets";
         private const string SpinClipPath = "Assets/audio/freesound_community-wheel-spin-click-slow-down-101152.mp3";
         private const string ResultClipPath = "Assets/audio/a_onclick_to_outro_magiccoin_fx.wav";
+        private const string SpinLoopPath = Root + "/Audio/SpinLoop.wav";
+        private const string SpinTailPath = Root + "/Audio/SpinTail.wav";
+        // Steady click section of the spin sound; the slow-down tail runs from SpinLoopEnd to the end.
+        private const float SpinLoopStart = 0.03f;
+        private const float SpinLoopEnd = 1.30f;
         private const string Root = "Assets/MonsterWheel";
         private const string HaloPath = Root + "/Textures/Halo.png";
         private const string ConfigPath = Root + "/Config/WheelConfig.asset";
@@ -137,9 +142,20 @@ namespace MonsterWheel.EditorTools
             for (var i = 0; i < RingLayout.IconCount; i++)
                 config.Icons[i] = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtFolder}/icon ({i + 1}).png");
 
-            config.SpinClip = AssetDatabase.LoadAssetAtPath<AudioClip>(SpinClipPath);
-            if (config.SpinClip == null)
+            var spin = AssetDatabase.LoadAssetAtPath<AudioClip>(SpinClipPath);
+            if (spin == null)
+            {
                 Debug.LogWarning($"[MonsterWheel] Spin sound not found at {SpinClipPath}; the wheel will be silent.");
+                config.SpinLoopClip = config.SpinTailClip = null;
+                config.SpinTailLength = 0f;
+            }
+            else
+            {
+                if (spin.loadState != AudioDataLoadState.Loaded) spin.LoadAudioData();
+                config.SpinLoopClip = SpinClipSlicer.WriteSlice(spin, SpinLoopStart, SpinLoopEnd, SpinLoopPath);
+                config.SpinTailClip = SpinClipSlicer.WriteSlice(spin, SpinLoopEnd, spin.length, SpinTailPath);
+                config.SpinTailLength = spin.length - SpinLoopEnd;
+            }
             config.ResultClip = AssetDatabase.LoadAssetAtPath<AudioClip>(ResultClipPath);
             if (config.ResultClip == null)
                 Debug.LogWarning($"[MonsterWheel] Result sound not found at {ResultClipPath}.");

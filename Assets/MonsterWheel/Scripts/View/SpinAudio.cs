@@ -4,9 +4,9 @@ using UnityEngine;
 namespace MonsterWheel.View
 {
     /// <summary>
-    /// Plays the spin sound in two parts cut from one clip: the steady click section loops while the
-    /// wheel spins, and the slow-down tail is scheduled so its last click lands when the ring stops.
-    /// A result sound plays once when the ring stops.
+    /// Plays the spin sound in two pre-cut parts: the steady click section loops while the wheel spins,
+    /// and the slow-down tail is scheduled so its last click lands when the ring stops. A result sound
+    /// plays once when the ring stops. Only plays ready-made clips, so it also works on WebGL.
     /// </summary>
     public sealed class SpinAudio : MonoBehaviour
     {
@@ -23,19 +23,19 @@ namespace MonsterWheel.View
         private bool _tailStarted;
         private WheelState _lastState = WheelState.Idle;
 
+        public float TailLength => _tailLength;
+
         /// <summary>Number of times the result sound has been triggered.</summary>
         public int ResultPlays { get; private set; }
 
         public void Init(WheelConfig cfg)
         {
-            var clip = cfg.SpinClip;
-            _hasSpin = clip != null && LoopSource != null && TailSource != null;
+            _hasSpin = cfg.SpinLoopClip != null && cfg.SpinTailClip != null && LoopSource != null && TailSource != null;
             if (_hasSpin)
             {
-                if (clip.loadState != AudioDataLoadState.Loaded) clip.LoadAudioData();
-                Setup(LoopSource, Slice(clip, cfg.SpinLoopStart, cfg.SpinLoopEnd, "SpinLoop"), true, cfg.SpinVolume);
-                Setup(TailSource, Slice(clip, cfg.SpinLoopEnd, clip.length, "SpinTail"), false, cfg.SpinVolume);
-                _tailLength = TailSource.clip.length;
+                Setup(LoopSource, cfg.SpinLoopClip, true, cfg.SpinVolume);
+                Setup(TailSource, cfg.SpinTailClip, false, cfg.SpinVolume);
+                _tailLength = cfg.SpinTailLength;
             }
 
             _hasResult = cfg.ResultClip != null && ResultSource != null;
@@ -97,20 +97,6 @@ namespace MonsterWheel.View
                 TailSource.Play();
                 LoopSource.Stop();
             }
-        }
-
-        /// <summary>Copies [start, end) seconds of <paramref name="source"/> into a new clip (end clamped to the clip).</summary>
-        public static AudioClip Slice(AudioClip source, float start, float end, string name)
-        {
-            var channels = source.channels;
-            var frequency = source.frequency;
-            var first = Mathf.Clamp(Mathf.RoundToInt(start * frequency), 0, source.samples - 1);
-            var last = Mathf.Clamp(Mathf.RoundToInt(end * frequency), first + 1, source.samples);
-            var data = new float[(last - first) * channels];
-            source.GetData(data, first);
-            var clip = AudioClip.Create(name, last - first, channels, frequency, false);
-            clip.SetData(data, 0);
-            return clip;
         }
 
         private static void Setup(AudioSource source, AudioClip clip, bool loop, float volume)

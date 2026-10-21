@@ -8,26 +8,31 @@ namespace MonsterWheel.Tests
     public class SpinAudioTests
     {
         [Test]
-        public void Slice_CopiesTheRequestedRange()
+        public void Init_UsesPreSlicedClipsAsIs()
         {
-            const int freq = 1000;
-            var source = AudioClip.Create("src", 2 * freq, 2, freq, false);
-            var data = new float[2 * freq * 2];
-            for (var i = 0; i < data.Length; i++) data[i] = i / (float)data.Length;
-            source.SetData(data, 0);
+            // WebGL cannot read or create PCM data at runtime, so SpinAudio must only play ready-made clips.
+            var config = ScriptableObject.CreateInstance<WheelConfig>();
+            config.SpinLoopClip = AudioClip.Create("loop", 100, 1, 1000, false);
+            config.SpinTailClip = AudioClip.Create("tail", 50, 1, 1000, false);
+            config.SpinTailLength = 1.1f;
+            var go = new GameObject("audio");
+            var audio = go.AddComponent<SpinAudio>();
+            audio.LoopSource = go.AddComponent<AudioSource>();
+            audio.TailSource = go.AddComponent<AudioSource>();
+            audio.ResultSource = go.AddComponent<AudioSource>();
 
-            var slice = SpinAudio.Slice(source, 0.5f, 1.25f, "slice");
+            audio.Init(config);
 
-            Assert.AreEqual(750, slice.samples);
-            Assert.AreEqual(2, slice.channels);
-            Assert.AreEqual(freq, slice.frequency);
-            var got = new float[slice.samples * 2];
-            slice.GetData(got, 0);
-            Assert.AreEqual(data[500 * 2], got[0], 1e-6f);
-            Assert.AreEqual(data[(500 + 749) * 2 + 1], got[got.Length - 1], 1e-6f);
+            Assert.AreSame(config.SpinLoopClip, audio.LoopSource.clip);
+            Assert.AreSame(config.SpinTailClip, audio.TailSource.clip);
+            Assert.IsTrue(audio.LoopSource.loop);
+            Assert.IsFalse(audio.TailSource.loop);
+            Assert.AreEqual(1.1f, audio.TailLength, "tail length comes from config, not from the (maybe unloaded) clip");
 
-            Object.DestroyImmediate(source);
-            Object.DestroyImmediate(slice);
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(config.SpinLoopClip);
+            Object.DestroyImmediate(config.SpinTailClip);
+            Object.DestroyImmediate(config);
         }
 
         [Test]
@@ -60,16 +65,6 @@ namespace MonsterWheel.Tests
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(config.ResultClip);
             Object.DestroyImmediate(config);
-        }
-
-        [Test]
-        public void Slice_ClampsEndToClipLength()
-        {
-            var source = AudioClip.Create("src", 1000, 1, 1000, false);
-            var slice = SpinAudio.Slice(source, 0.6f, 5f, "tail");
-            Assert.AreEqual(400, slice.samples);
-            Object.DestroyImmediate(source);
-            Object.DestroyImmediate(slice);
         }
     }
 }

@@ -28,8 +28,8 @@ namespace MonsterWheel.View
             _engine = new WheelEngine(Config.ToSettings(), new SystemRandom());
             Ring.Init(_engine.Layout, Config);
             Reel.Init(Config.Icons);
-            if (Audio != null) Audio.Init(Config);
             Render(0f);
+            InitAudio();
         }
 
         private void Update()
@@ -40,6 +40,21 @@ namespace MonsterWheel.View
 
             _engine.Tick(Time.deltaTime);
             Render(Time.deltaTime);
+        }
+
+        /// <summary>Sound is optional: a platform audio problem must never stop the wheel from working.</summary>
+        private void InitAudio()
+        {
+            if (Audio == null) return;
+            try
+            {
+                Audio.Init(Config);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e, Audio);
+                Audio.enabled = false;
+            }
         }
 
         private void Render(float dt)
