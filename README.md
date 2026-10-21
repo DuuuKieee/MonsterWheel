@@ -46,8 +46,3 @@ Stops start from the current spin speed (duration = curve slope × distance / sp
 ## Rebuild the scene
 
 *Tools > Monster Wheel > Build Scene* regenerates the scene, config asset, halo texture, sprite import settings and player resolution from `Assets/Assets/Art` and `Assets/Assets/Audio`.
-
-## Docs
-
-- Design: `docs/superpowers/specs/2026-10-20-monster-wheel-design.md`
-- Plan: `docs/superpowers/plans/2026-10-20-monster-wheel.md`
