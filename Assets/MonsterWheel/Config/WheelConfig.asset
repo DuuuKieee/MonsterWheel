@@ -35,6 +35,8 @@ MonoBehaviour:
   SpinLoopStart: 0.03
   SpinLoopEnd: 1.3
   SpinVolume: 0.8
+  ResultClip: {fileID: 8300000, guid: 59245a6a35c7f1e4d99a75140d05017e, type: 3}
+  ResultVolume: 0.8
   TrailDecay: 0.25
   PulsePeriod: 0.6
   ActiveScale: 1.25

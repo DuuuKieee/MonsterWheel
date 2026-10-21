@@ -16,6 +16,7 @@ namespace MonsterWheel.EditorTools
     {
         private const string ArtFolder = "Assets/assets";
         private const string SpinClipPath = "Assets/audio/freesound_community-wheel-spin-click-slow-down-101152.mp3";
+        private const string ResultClipPath = "Assets/audio/a_onclick_to_outro_magiccoin_fx.wav";
         private const string Root = "Assets/MonsterWheel";
         private const string HaloPath = Root + "/Textures/Halo.png";
         private const string ConfigPath = Root + "/Config/WheelConfig.asset";
@@ -139,6 +140,9 @@ namespace MonsterWheel.EditorTools
             config.SpinClip = AssetDatabase.LoadAssetAtPath<AudioClip>(SpinClipPath);
             if (config.SpinClip == null)
                 Debug.LogWarning($"[MonsterWheel] Spin sound not found at {SpinClipPath}; the wheel will be silent.");
+            config.ResultClip = AssetDatabase.LoadAssetAtPath<AudioClip>(ResultClipPath);
+            if (config.ResultClip == null)
+                Debug.LogWarning($"[MonsterWheel] Result sound not found at {ResultClipPath}.");
 
             EditorUtility.SetDirty(config);
             AssetDatabase.SaveAssets();
@@ -209,8 +213,10 @@ namespace MonsterWheel.EditorTools
             var spinAudio = audioGo.AddComponent<SpinAudio>();
             spinAudio.LoopSource = audioGo.AddComponent<AudioSource>();
             spinAudio.TailSource = audioGo.AddComponent<AudioSource>();
+            spinAudio.ResultSource = audioGo.AddComponent<AudioSource>();
             spinAudio.LoopSource.playOnAwake = false;
             spinAudio.TailSource.playOnAwake = false;
+            spinAudio.ResultSource.playOnAwake = false;
             controller.Audio = spinAudio;
 
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));

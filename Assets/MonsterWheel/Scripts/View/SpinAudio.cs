@@ -6,37 +6,60 @@ namespace MonsterWheel.View
     /// <summary>
     /// Plays the spin sound in two parts cut from one clip: the steady click section loops while the
     /// wheel spins, and the slow-down tail is scheduled so its last click lands when the ring stops.
+    /// A result sound plays once when the ring stops.
     /// </summary>
     public sealed class SpinAudio : MonoBehaviour
     {
         public AudioSource LoopSource;
         public AudioSource TailSource;
+        public AudioSource ResultSource;
 
         // Schedule the tail slightly ahead so the audio thread starts it on time.
         private const float ScheduleLead = 0.1f;
 
+        private bool _hasSpin;
+        private bool _hasResult;
         private float _tailLength;
         private bool _tailStarted;
         private WheelState _lastState = WheelState.Idle;
 
+        /// <summary>Number of times the result sound has been triggered.</summary>
+        public int ResultPlays { get; private set; }
+
         public void Init(WheelConfig cfg)
         {
             var clip = cfg.SpinClip;
-            if (clip == null || LoopSource == null || TailSource == null)
+            _hasSpin = clip != null && LoopSource != null && TailSource != null;
+            if (_hasSpin)
             {
-                enabled = false;
-                return;
+                if (clip.loadState != AudioDataLoadState.Loaded) clip.LoadAudioData();
+                Setup(LoopSource, Slice(clip, cfg.SpinLoopStart, cfg.SpinLoopEnd, "SpinLoop"), true, cfg.SpinVolume);
+                Setup(TailSource, Slice(clip, cfg.SpinLoopEnd, clip.length, "SpinTail"), false, cfg.SpinVolume);
+                _tailLength = TailSource.clip.length;
             }
 
-            if (clip.loadState != AudioDataLoadState.Loaded) clip.LoadAudioData();
-            Setup(LoopSource, Slice(clip, cfg.SpinLoopStart, cfg.SpinLoopEnd, "SpinLoop"), true, cfg.SpinVolume);
-            Setup(TailSource, Slice(clip, cfg.SpinLoopEnd, clip.length, "SpinTail"), false, cfg.SpinVolume);
-            _tailLength = TailSource.clip.length;
+            _hasResult = cfg.ResultClip != null && ResultSource != null;
+            if (_hasResult) Setup(ResultSource, cfg.ResultClip, false, cfg.ResultVolume);
+
+            enabled = _hasSpin || _hasResult;
         }
 
         public void Render(WheelEngine engine)
         {
             var state = engine.State;
+
+            if (_hasResult && state == WheelState.Idle && _lastState == WheelState.StoppingRing)
+            {
+                ResultSource.Play();
+                ResultPlays++;
+            }
+
+            if (_hasSpin) RenderSpin(engine, state);
+            _lastState = state;
+        }
+
+        private void RenderSpin(WheelEngine engine, WheelState state)
+        {
 
             if (state == WheelState.Spinning && _lastState == WheelState.Idle)
             {
@@ -53,8 +76,6 @@ namespace MonsterWheel.View
             {
                 LoopSource.Stop();
             }
-
-            _lastState = state;
         }
 
         /// <summary>Starts the tail so that it ends <paramref name="remaining"/> seconds from now.</summary>

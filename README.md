@@ -12,7 +12,7 @@ A 720x1280 Unity mini-game: a ring of 18 monster slots lights up clockwise aroun
 
 Space is ignored while the wheel is stopping.
 
-Sound: the steady click section of `Assets/audio/...wheel-spin-click-slow-down....mp3` (0.03–1.30 s) loops while spinning; the slow-down tail (1.30 s → end) is scheduled so its last click lands exactly when the ring stops. Tune in `WheelConfig` (Audio section).
+Sound: the steady click section of `Assets/audio/...wheel-spin-click-slow-down....mp3` (0.03–1.30 s) loops while spinning; the slow-down tail (1.30 s → end) is scheduled so its last click lands exactly when the ring stops; `a_onclick_to_outro_magiccoin_fx.wav` plays once when the result is shown. Tune in `WheelConfig` (Audio section).
 
 ## Run
 
@@ -40,7 +40,7 @@ Stops start from the current spin speed (duration = curve slope × distance / sp
 
 ## Tests
 
-*Window > General > Test Runner > EditMode > Run All* (42 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
+*Window > General > Test Runner > EditMode > Run All* (43 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
 
 ## Rebuild the scene
 

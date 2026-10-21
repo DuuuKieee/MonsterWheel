@@ -33,6 +33,9 @@ namespace MonsterWheel.View
         public float SpinLoopStart = 0.03f;
         public float SpinLoopEnd = 1.30f;
         [Range(0f, 1f)] public float SpinVolume = 0.8f;
+        [Tooltip("Played once when the ring stops and the result is shown.")]
+        public AudioClip ResultClip;
+        [Range(0f, 1f)] public float ResultVolume = 0.8f;
 
         [Header("Glow")]
         public float TrailDecay = 0.25f;
