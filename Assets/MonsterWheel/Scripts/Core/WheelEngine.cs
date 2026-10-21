@@ -38,6 +38,12 @@ namespace MonsterWheel.Core
         /// <summary>True while idle after a finished round (the result is on screen).</summary>
         public bool HasResult { get; private set; }
 
+        /// <summary>Seconds until the ring comes to rest; 0 unless a stop is in progress.</summary>
+        public float RingStopTimeRemaining =>
+            (State == WheelState.StoppingReel || State == WheelState.StoppingRing) && _ringStop != null
+                ? _ringStop.Remaining
+                : 0f;
+
         public int ActiveSlot => Mod((int)Math.Floor(RingPosition), RingLayout.SlotCount);
         public int CenterIcon => Mod((int)Math.Round(ReelPosition), RingLayout.IconCount);
 

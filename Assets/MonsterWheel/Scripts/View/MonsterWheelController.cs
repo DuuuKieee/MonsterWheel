@@ -10,6 +10,8 @@ namespace MonsterWheel.View
         public WheelConfig Config;
         public RingView Ring;
         public ReelView Reel;
+        [Tooltip("Optional spin sound.")]
+        public SpinAudio Audio;
 
         private WheelEngine _engine;
 
@@ -26,6 +28,7 @@ namespace MonsterWheel.View
             _engine = new WheelEngine(Config.ToSettings(), new SystemRandom());
             Ring.Init(_engine.Layout, Config);
             Reel.Init(Config.Icons);
+            if (Audio != null) Audio.Init(Config);
             Render(0f);
         }
 
@@ -43,6 +46,7 @@ namespace MonsterWheel.View
         {
             Ring.Render(_engine.ActiveSlot, _engine.HasResult, dt);
             Reel.Render(_engine.ReelPosition, _engine.ReelSpeedRatio);
+            if (Audio != null && Audio.enabled) Audio.Render(_engine);
         }
 
         private bool IsSetUpCorrectly()

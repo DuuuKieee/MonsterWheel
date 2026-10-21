@@ -1,3 +1,5 @@
+using System;
+
 namespace MonsterWheel.Core
 {
     /// <summary>
@@ -36,6 +38,9 @@ namespace MonsterWheel.Core
         public float End { get; }
         public float Duration => _duration;
         public bool IsDone { get; private set; }
+
+        /// <summary>Seconds until the motion ends.</summary>
+        public float Remaining => IsDone ? 0f : Math.Max(0f, _duration - _elapsed);
 
         /// <summary>Current velocity in position units per second (0 once done).</summary>
         public float Speed => IsDone || _duration <= 0f

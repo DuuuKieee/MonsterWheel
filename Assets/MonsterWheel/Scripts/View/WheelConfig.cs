@@ -26,6 +26,14 @@ namespace MonsterWheel.View
         public float RingStopLag = 0.3f;
         [Range(0.05f, 1f)] public float MinStopSpeedRatio = 0.5f;
 
+        [Header("Audio")]
+        [Tooltip("Spin sound: a steady click section followed by a slow-down tail.")]
+        public AudioClip SpinClip;
+        [Tooltip("Steady section [start, end) is looped while spinning; everything after end is the slow-down tail.")]
+        public float SpinLoopStart = 0.03f;
+        public float SpinLoopEnd = 1.30f;
+        [Range(0f, 1f)] public float SpinVolume = 0.8f;
+
         [Header("Glow")]
         public float TrailDecay = 0.25f;
         public float PulsePeriod = 0.6f;
@@ -60,6 +68,8 @@ namespace MonsterWheel.View
             Positive(PulsePeriod, nameof(PulsePeriod));
             Positive(ActiveScale, nameof(ActiveScale));
             Positive(PulseScale, nameof(PulseScale));
+            if (SpinClip != null && !(SpinLoopStart >= 0f && SpinLoopStart < SpinLoopEnd && SpinLoopEnd < SpinClip.length))
+                errors.Add("Spin loop range must satisfy 0 <= SpinLoopStart < SpinLoopEnd < clip length.");
             return errors;
         }
 

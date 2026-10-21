@@ -4,6 +4,7 @@
     "references": [
         "MonsterWheel.Core",
         "MonsterWheel.Editor",
+        "MonsterWheel.View",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

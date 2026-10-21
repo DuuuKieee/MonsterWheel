@@ -15,6 +15,7 @@ namespace MonsterWheel.EditorTools
     public static class MonsterWheelSceneBuilder
     {
         private const string ArtFolder = "Assets/assets";
+        private const string SpinClipPath = "Assets/audio/freesound_community-wheel-spin-click-slow-down-101152.mp3";
         private const string Root = "Assets/MonsterWheel";
         private const string HaloPath = Root + "/Textures/Halo.png";
         private const string ConfigPath = Root + "/Config/WheelConfig.asset";
@@ -43,6 +44,7 @@ namespace MonsterWheel.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             ConfigureArtImport();
+            ConfigureAudioImport();
             var halo = CreateHaloSprite();
             var config = CreateConfig();
             BuildScene(config, halo);
@@ -80,6 +82,17 @@ namespace MonsterWheel.EditorTools
                 if (path.EndsWith("frame.png")) importer.spriteBorder = new Vector4(12f, 12f, 12f, 12f);
                 importer.SaveAndReimport();
             }
+        }
+
+        /// <summary>The spin clip is sliced at runtime, so its samples must be readable (decompressed on load).</summary>
+        private static void ConfigureAudioImport()
+        {
+            if (!(AssetImporter.GetAtPath(SpinClipPath) is AudioImporter importer)) return;
+            var settings = importer.defaultSampleSettings;
+            settings.loadType = AudioClipLoadType.DecompressOnLoad;
+            importer.defaultSampleSettings = settings;
+            importer.loadInBackground = false;
+            importer.SaveAndReimport();
         }
 
         private static Sprite CreateHaloSprite()
@@ -123,6 +136,10 @@ namespace MonsterWheel.EditorTools
             for (var i = 0; i < RingLayout.IconCount; i++)
                 config.Icons[i] = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtFolder}/icon ({i + 1}).png");
 
+            config.SpinClip = AssetDatabase.LoadAssetAtPath<AudioClip>(SpinClipPath);
+            if (config.SpinClip == null)
+                Debug.LogWarning($"[MonsterWheel] Spin sound not found at {SpinClipPath}; the wheel will be silent.");
+
             EditorUtility.SetDirty(config);
             AssetDatabase.SaveAssets();
             return config;
@@ -132,7 +149,7 @@ namespace MonsterWheel.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var camGo = new GameObject("Main Camera", typeof(Camera));
+            var camGo = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
             camGo.tag = "MainCamera";
             var cam = camGo.GetComponent<Camera>();
             cam.orthographic = true;
@@ -187,6 +204,14 @@ namespace MonsterWheel.EditorTools
             controller.Config = config;
             controller.Ring = ring;
             controller.Reel = reel;
+
+            var audioGo = new GameObject("SpinAudio");
+            var spinAudio = audioGo.AddComponent<SpinAudio>();
+            spinAudio.LoopSource = audioGo.AddComponent<AudioSource>();
+            spinAudio.TailSource = audioGo.AddComponent<AudioSource>();
+            spinAudio.LoopSource.playOnAwake = false;
+            spinAudio.TailSource.playOnAwake = false;
+            controller.Audio = spinAudio;
 
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
             EditorSceneManager.SaveScene(scene, ScenePath);

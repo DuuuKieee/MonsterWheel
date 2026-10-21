@@ -222,6 +222,32 @@ namespace MonsterWheel.Tests
         }
 
         [Test]
+        public void RingStopTimeRemaining_CountsDownToZeroWhenRingStops()
+        {
+            var engine = NewEngine(12);
+            Assert.AreEqual(0f, engine.RingStopTimeRemaining);
+            engine.Press();
+            for (var i = 0; i < 60; i++) engine.Tick(1f / 60f);
+            Assert.AreEqual(0f, engine.RingStopTimeRemaining, "not stopping yet");
+
+            engine.Press();
+            var remaining = engine.RingStopTimeRemaining;
+            Assert.That(remaining, Is.GreaterThan(0.5f));
+
+            engine.Tick(0.05f);
+            Assert.AreEqual(remaining - 0.05f, engine.RingStopTimeRemaining, 1e-4f);
+
+            var elapsed = 0.05f;
+            while (engine.State != WheelState.Idle)
+            {
+                engine.Tick(0.01f);
+                elapsed += 0.01f;
+            }
+            Assert.AreEqual(remaining, elapsed, 0.011f, "round should end when the countdown reaches zero");
+            Assert.AreEqual(0f, engine.RingStopTimeRemaining);
+        }
+
+        [Test]
         public void SpeedRatios_AreZeroWhenIdle_AndFullWhileSpinning()
         {
             var engine = NewEngine(4);

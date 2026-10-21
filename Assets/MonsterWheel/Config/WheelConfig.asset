@@ -31,6 +31,10 @@ MonoBehaviour:
   ReelSettleTime: 0.25
   RingStopLag: 0.3
   MinStopSpeedRatio: 0.5
+  SpinClip: {fileID: 8300000, guid: aedc26fe6a38bc347915c708c5e1c23e, type: 3}
+  SpinLoopStart: 0.03
+  SpinLoopEnd: 1.3
+  SpinVolume: 0.8
   TrailDecay: 0.25
   PulsePeriod: 0.6
   ActiveScale: 1.25
