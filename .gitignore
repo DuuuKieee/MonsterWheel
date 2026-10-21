@@ -111,3 +111,6 @@ InitTestScene*.unity*
 # Project-specific
 .vscode/
 .superpowers/
+
+# Local design notes (not published)
+docs/
