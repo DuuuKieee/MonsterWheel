@@ -33,7 +33,7 @@ MonoBehaviour:
   MinStopSpeedRatio: 0.5
   SpinLoopClip: {fileID: 8300000, guid: 57f77e4ff22d8954fa76b29e6dbcb77b, type: 3}
   SpinTailClip: {fileID: 8300000, guid: 77687059d9a829e488c6ac3114043c7d, type: 3}
-  SpinTailLength: 1.123991
+  SpinTailLength: 1.1240001
   SpinVolume: 0.8
   ResultClip: {fileID: 8300000, guid: 59245a6a35c7f1e4d99a75140d05017e, type: 3}
   ResultVolume: 0.8

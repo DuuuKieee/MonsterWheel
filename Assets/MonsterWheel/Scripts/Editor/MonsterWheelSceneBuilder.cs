@@ -247,6 +247,9 @@ namespace MonsterWheel.EditorTools
             PlayerSettings.defaultScreenHeight = (int)ReferenceResolution.y;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             PlayerSettings.resizableWindow = false;
+            // Web canvas is fixed at qHD (540x960, 9:16).
+            PlayerSettings.defaultWebScreenWidth = 540;
+            PlayerSettings.defaultWebScreenHeight = 960;
             AssetDatabase.SaveAssets();
         }
 

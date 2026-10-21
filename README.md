@@ -18,7 +18,8 @@ Sound: *Build Scene* cuts the spin mp3 into `Assets/MonsterWheel/Audio/SpinLoop.
 
 - Unity **6000.3.10f1**. Open `Assets/MonsterWheel/Scenes/MonsterWheel.unity` and press Play.
 - Set the Game View to a 720x1280 (9:16) resolution. Any other aspect still shows the whole board (CanvasScaler *Expand*).
-- Build: *File > Build Profiles > Windows*, the scene is already in the build list. The player opens a 720x1280 window (capped by the monitor's height).
+- Windows build: opens a 720x1280 window when the screen has room, otherwise the largest 9:16 window that fits the work area (e.g. 558x992 on a 1080p screen), centered.
+- Web build: fixed qHD canvas, 540x960.
 
 ## Project layout
 
@@ -40,7 +41,7 @@ Stops start from the current spin speed (duration = curve slope × distance / sp
 
 ## Tests
 
-*Window > General > Test Runner > EditMode > Run All* (45 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
+*Window > General > Test Runner > EditMode > Run All* (50 tests), including a 1000-round simulation with random frame times asserting that ring and reel always stop on the same monster.
 
 ## Rebuild the scene
 
